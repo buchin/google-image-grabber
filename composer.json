@@ -1,0 +1,26 @@
+{
+    "name": "buchin/google-image-grabber",
+    "description": "Scrape google images",
+    "type": "library",
+    "require": {
+        "campo/random-user-agent": "^1.2",
+        "paquettg/php-html-parser": "^1.7",
+        "maciejczyzewski/bottomline": "^0.0.9"
+    },
+    "license": "Halal",
+    "authors": [
+        {
+            "name": "Mochammad Masbuchin",
+            "email": "buchin@dropsugar.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "Buchin\\GoogleImageGrabber\\": "src/"
+        }
+    },
+    "require-dev": {
+        "kahlan/kahlan": "dev-master"
+    }
+}
