@@ -4,7 +4,7 @@
     "type": "library",
     "require": {
         "campo/random-user-agent": "^1.2",
-        "paquettg/php-html-parser": "^1.7",
+        "thesoftwarefanatics/php-html-parser": "^1.8.0",
         "maciejczyzewski/bottomline": "^0.0.9"
     },
     "license": "Halal",

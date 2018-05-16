@@ -37,7 +37,7 @@ class GoogleImageGrabber
 		$htmldom->loadStr($response, []);
 
 		$results = [];
-		
+
 		foreach ($htmldom->find('.rg_di > .rg_meta') as $n => $dataset) {
 
 			$jsondata = $dataset->text;
