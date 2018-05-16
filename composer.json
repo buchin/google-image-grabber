@@ -7,7 +7,7 @@
         "thesoftwarefanatics/php-html-parser": "^1.8.0",
         "maciejczyzewski/bottomline": "^0.0.9"
     },
-    "license": "Halal",
+    "license": "MIT",
     "authors": [
         {
             "name": "Mochammad Masbuchin",
