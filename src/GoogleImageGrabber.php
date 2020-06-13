@@ -82,14 +82,14 @@ class GoogleImageGrabber
 
 		$response = file_get_contents($url, FALSE, $context);
 
+		$data = explode("AF_initDataCallback({key: 'ds:1', isError:  false , hash: '2', data:", $response);
 
-		$data = explode("data:function(){return ", $response);
-
-		$data = isset($data[2]) ? $data[2] : '';
-		$data = explode('}});</script>', $data);
+		$data = isset($data[1]) ? $data[1] : '';
+		$data = explode('});</script>', $data);
 		$data = $data[0];
 
 		$data = json_decode($data, true);
+
 
 		$rawResults = [];
 		$results = [];
