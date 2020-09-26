@@ -58,7 +58,7 @@ class GoogleImageGrabber
 		}
 	}
 
-	public static function grab($keyword, $options = [])
+	public static function grab($keyword, $proxy = '', $options = [])
 	{
 		$url = "https://www.google.com/search?q=" . urlencode($keyword) . "&source=lnms&tbm=isch&tbs=";
 
@@ -67,9 +67,12 @@ class GoogleImageGrabber
 		    'device_type' => 'Desktop'
 		]);
 
+        if(!empty($proxy)) $proxy = "tcp://$proxy";
+
 		$options  = [
 			'http' => [
 				'method'     =>"GET",
+				'proxy'           => "$proxy",
 				'user_agent' =>  $ua,
 			],
 			'ssl' => [
@@ -77,7 +80,6 @@ class GoogleImageGrabber
 				"verify_peer_name" => FALSE,
 			],
 		];
-
 		$context  = stream_context_create($options);
 
 		$response = file_get_contents($url, FALSE, $context);
