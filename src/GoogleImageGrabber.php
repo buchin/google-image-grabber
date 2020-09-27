@@ -124,8 +124,13 @@ class GoogleImageGrabber
 			    $result['height'] = $data[7];
 			    $result['source'] = isset($data[12]) ? $data[12] : 'none';
 			    $result['domain'] = isset($data[20]) ? $data[20] : 'none';
+			    $result['thumbnail'] =  isset($data[26]) ? $data[26] : $data[1];
 
-				$results[] = $result;
+			    if(strpos($result['url'], 'http') !== false){
+			    	
+					$results[] = $result;
+			    }
+
 			}
 
 		}
