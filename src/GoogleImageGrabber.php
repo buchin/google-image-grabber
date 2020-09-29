@@ -1,23 +1,24 @@
-<?php namespace Buchin\GoogleImageGrabber;
+<?php
+
+namespace Buchin\GoogleImageGrabber;
 
 use PHPHtmlParser\Dom;
 use __;
+
 /**
-* 
-*/
+ * 
+ */
 class GoogleImageGrabber
-{	
+{
 	public static function getValues($array)
 	{
 		$return = [];
 		foreach ($array as $key => $value) {
-			if(is_array($value)){
+			if (is_array($value)) {
 				foreach ($value as $vk => $vv) {
 					$return[] = $vv;
 				}
-			}
-
-			else{
+			} else {
 				$return[] = $value;
 			}
 		}
@@ -25,14 +26,18 @@ class GoogleImageGrabber
 		return $return;
 	}
 
-	public static function array_flatten($array) {
+	public static function array_flatten($array)
+	{
 
-	   $return = array();
-	   foreach ($array as $key => $value) {
-	       if (is_array($value)){ $return = array_merge($return, self::array_flatten($value));}
-	       else {$return[$key] = $value;}
-	   }
-	   return $return;
+		$return = array();
+		foreach ($array as $key => $value) {
+			if (is_array($value)) {
+				$return = array_merge($return, self::array_flatten($value));
+			} else {
+				$return[$key] = $value;
+			}
+		}
+		return $return;
 	}
 
 	public static function filterResult($array, &$result)
@@ -42,36 +47,59 @@ class GoogleImageGrabber
 		foreach ($array as $key => $value) {
 			$data = [];
 
-			if(filter_var($value, FILTER_VALIDATE_URL)){
+			if (filter_var($value, FILTER_VALIDATE_URL)) {
 				$result[] = array_filter(self::array_flatten($array));
 			}
 
 
-			if(is_string($value)){
+			if (is_string($value)) {
 				$result[] = $value;
 			}
 
-			
-			if(is_array($value)){
+
+			if (is_array($value)) {
 				self::filterResult($value, $result);
 			}
 		}
 	}
 
-	public static function grab($keyword, $proxy = '', $options = [])
+	public static function grab($keyword, $proxy = '', $options = array())
 	{
-		$url = "https://www.google.com/search?q=" . urlencode($keyword) . "&source=lnms&tbm=isch&tbs=";
+
+		/* ------------------------------------------------------------------------------------------------------------------ */
+		/*                                                                                                           $OPTIONS */
+		/* ------------------------------------------------------------------------------------------------------------------ */
+
+		//		use	array('safe'=>'active',...) in caller
+
+		// examples
+		//safe=active						filter of pornography and potentially offensive and inappropriate content
+		//tbs=isz:l							for large image
+		//tbs=isz:m         				for medium image
+		//tba=isz:i							for icon  image
+		//tbs=isz:ex,iszw:width,iszh:height	for size exactly with width and height
+		//tbs=isz:lt,islt:...mp				for Megapixels of image
+
+
+
+		$_POST['options']['tbs'] = 'isz:lt,islt:6mp';
+
+		$opts = '';
+		foreach ($options as $key => $value) {
+			$opts .= "&$key=$value";
+		}
+		$url = "https://www.google.com/search?q=" . urlencode($keyword) . $opts . "&source=lnms&tbm=isch&tbs=";
 
 		$ua = \Campo\UserAgent::random([
-		    'os_type' => ['Windows', 'OS X'],
-		    'device_type' => 'Desktop'
+			'os_type' => ['Windows', 'OS X'],
+			'device_type' => 'Desktop'
 		]);
 
-        if(!empty($proxy)) $proxy = "tcp://$proxy";
+		if (!empty($proxy)) $proxy = "tcp://$proxy";
 
 		$options  = [
 			'http' => [
-				'method'     =>"GET",
+				'method'     => "GET",
 				'proxy'           => "$proxy",
 				'user_agent' =>  $ua,
 			],
@@ -98,7 +126,7 @@ class GoogleImageGrabber
 		$rawResults = [];
 		$results = [];
 
-		if(isset($data[31][0][12][2])){
+		if (isset($data[31][0][12][2])) {
 			$rawResults = $data[31][0][12][2];
 		}
 
@@ -107,32 +135,30 @@ class GoogleImageGrabber
 
 			self::filterResult($rawResult, $result);
 			$data = self::getValues($result);
-			
+
 			$result = [];
 
-			if(count($data) >= 11){
+			if (count($data) >= 11) {
 
-			    $result['keyword'] = $keyword;
-			    $result['slug'] = __::slug($keyword);
+				$result['keyword'] = $keyword;
+				$result['slug'] = __::slug($keyword);
 
-			    $result['title'] = isset($data[13]) ? ucwords(__::slug($data[13], ['delimiter' => ' '])) : 'none';
-			    $result['alt'] = isset($data[19]) ? __::slug($data[19], ['delimiter' => ' ']) : 'none';
-			    
-			    $result['url'] = $data[8];
-			    $result['filetype'] = self::getFileType($data[8]);
-			    $result['width'] = $data[6];
-			    $result['height'] = $data[7];
-			    $result['source'] = isset($data[12]) ? $data[12] : 'none';
-			    $result['domain'] = isset($data[20]) ? $data[20] : 'none';
-			    $result['thumbnail'] =  isset($data[26]) ? $data[26] : $data[1];
+				$result['title'] = isset($data[13]) ? ucwords(__::slug($data[13], ['delimiter' => ' '])) : 'none';
+				$result['alt'] = isset($data[19]) ? __::slug($data[19], ['delimiter' => ' ']) : 'none';
 
-			    if(strpos($result['url'], 'http') !== false){
-			    	
+				$result['url'] = $data[8];
+				$result['filetype'] = self::getFileType($data[8]);
+				$result['width'] = $data[6];
+				$result['height'] = $data[7];
+				$result['source'] = isset($data[12]) ? $data[12] : 'none';
+				$result['domain'] = isset($data[20]) ? $data[20] : 'none';
+				$result['thumbnail'] =  isset($data[26]) ? $data[26] : $data[1];
+
+				if (strpos($result['url'], 'http') !== false) {
+
 					$results[] = $result;
-			    }
-
+				}
 			}
-
 		}
 
 		return $results;
@@ -158,7 +184,7 @@ class GoogleImageGrabber
 			case strpos($url, '.gif'):
 				return 'gif';
 				break;
-			
+
 			default:
 				return 'jpg';
 				break;
