@@ -80,10 +80,6 @@ class GoogleImageGrabber
 		//tbs=isz:ex,iszw:width,iszh:height	for size exactly with width and height
 		//tbs=isz:lt,islt:...mp				for Megapixels of image
 
-
-
-		$_POST['options']['tbs'] = 'isz:lt,islt:6mp';
-
 		$opts = '';
 		foreach ($options as $key => $value) {
 			$opts .= "&$key=$value";
