@@ -3,158 +3,174 @@
 use PHPHtmlParser\Dom;
 use __;
 /**
-* 
-*/
+ *
+ */
 class GoogleImageGrabber
-{	
-	public static function getValues($array)
-	{
-		$return = [];
-		foreach ($array as $key => $value) {
-			if(is_array($value)){
-				foreach ($value as $vk => $vv) {
-					$return[] = $vv;
-				}
-			}
+{
+    public static function getValues($array)
+    {
+        $return = [];
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                foreach ($value as $vk => $vv) {
+                    $return[] = $vv;
+                }
+            } else {
+                $return[] = $value;
+            }
+        }
 
-			else{
-				$return[] = $value;
-			}
-		}
+        return $return;
+    }
 
-		return $return;
-	}
+    public static function array_flatten($array)
+    {
+        $return = [];
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                $return = array_merge($return, self::array_flatten($value));
+            } else {
+                $return[$key] = $value;
+            }
+        }
+        return $return;
+    }
 
-	public static function array_flatten($array) {
+    public static function filterResult($array, &$result)
+    {
+        $array = array_filter($array);
 
-	   $return = array();
-	   foreach ($array as $key => $value) {
-	       if (is_array($value)){ $return = array_merge($return, self::array_flatten($value));}
-	       else {$return[$key] = $value;}
-	   }
-	   return $return;
-	}
+        foreach ($array as $key => $value) {
+            $data = [];
 
-	public static function filterResult($array, &$result)
-	{
-		$array = array_filter($array);
+            if (filter_var($value, FILTER_VALIDATE_URL)) {
+                $result[] = array_filter(self::array_flatten($array));
+            }
 
-		foreach ($array as $key => $value) {
-			$data = [];
+            if (is_string($value)) {
+                $result[] = $value;
+            }
 
-			if(filter_var($value, FILTER_VALIDATE_URL)){
-				$result[] = array_filter(self::array_flatten($array));
-			}
+            if (is_array($value)) {
+                self::filterResult($value, $result);
+            }
+        }
+    }
 
+    public static function grab($keyword, $options = [])
+    {
+        $url =
+            "https://www.google.com/search?q=" .
+            urlencode($keyword) .
+            "&source=lnms&tbm=isch&tbs=";
 
-			if(is_string($value)){
-				$result[] = $value;
-			}
+        $uas = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Edg/88.0.705.68",
+            "Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0",
+            "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Vivaldi/3.6",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Vivaldi/3.6",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.2 Safari/605.1.15",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 11.2; rv:85.0) Gecko/20100101 Firefox/85.0",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Vivaldi/3.6",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Edg/88.0.705.63",
+        ];
 
-			
-			if(is_array($value)){
-				self::filterResult($value, $result);
-			}
-		}
-	}
+        $ua = $uas[array_rand($uas)];
 
-	public static function grab($keyword, $options = [])
-	{
-		$url = "https://www.google.com/search?q=" . urlencode($keyword) . "&source=lnms&tbm=isch&tbs=";
+        $options = [
+            "http" => [
+                "method" => "GET",
+                "user_agent" => $ua,
+            ],
+            "ssl" => [
+                "verify_peer" => false,
+                "verify_peer_name" => false,
+            ],
+        ];
 
-		$ua = \Campo\UserAgent::random([
-		    'os_type' => ['Windows', 'OS X'],
-		    'device_type' => 'Desktop'
-		]);
+        $context = stream_context_create($options);
 
-		$options  = [
-			'http' => [
-				'method'     =>"GET",
-				'user_agent' =>  $ua,
-			],
-			'ssl' => [
-				"verify_peer"      => FALSE,
-				"verify_peer_name" => FALSE,
-			],
-		];
+        $response = file_get_contents($url, false, $context);
 
-		$context  = stream_context_create($options);
+        $exploded = explode(
+            "AF_initDataCallback({key: 'ds:1', isError:  false , hash: '2', data:",
+            $response
+        );
 
-		$response = file_get_contents($url, FALSE, $context);
+        $data = isset($exploded[1]) ? $exploded[1] : "";
 
-		$exploded = explode("AF_initDataCallback({key: 'ds:1', isError:  false , hash: '2', data:", $response);
+        $data = explode(", sideChannel: {}});</script>", $data);
+        $data = $data[0];
 
+        $data = json_decode($data, true);
 
-		$data = isset($exploded[1]) ? $exploded[1] : '';
+        $rawResults = [];
+        $results = [];
 
-		$data = explode(', sideChannel: {}});</script>', $data);
-		$data = $data[0];
+        if (isset($data[31][0][12][2])) {
+            $rawResults = $data[31][0][12][2];
+        }
 
-		$data = json_decode($data, true);
+        foreach ($rawResults as $rawResult) {
+            $result = [];
 
+            self::filterResult($rawResult, $result);
+            $data = self::getValues($result);
 
-		$rawResults = [];
-		$results = [];
+            $result = [];
 
-		if(isset($data[31][0][12][2])){
-			$rawResults = $data[31][0][12][2];
-		}
+            if (count($data) >= 11) {
+                $result["keyword"] = $keyword;
+                $result["slug"] = __::slug($keyword);
 
-		foreach ($rawResults as $rawResult) {
-			$result = [];
+                $result["title"] = ucwords(
+                    __::slug($data[13], ["delimiter" => " "])
+                );
+                $result["alt"] = __::slug($data[19], ["delimiter" => " "]);
 
-			self::filterResult($rawResult, $result);
-			$data = self::getValues($result);
+                $result["url"] = $data[8];
+                $result["filetype"] = self::getFileType($data[8]);
+                $result["width"] = $data[6];
+                $result["height"] = $data[7];
+                $result["source"] = $data[12];
+                $result["domain"] = $data[20];
 
+                $results[] = $result;
+            }
+        }
 
-			$result = [];
+        return $results;
+    }
 
-			if(count($data) >= 11){
-			    $result['keyword'] = $keyword;
-			    $result['slug'] = __::slug($keyword);
+    public static function getFileType($url)
+    {
+        $url = strtolower($url);
 
-			    $result['title'] = ucwords(__::slug($data[13], ['delimiter' => ' ']));
-			    $result['alt'] = __::slug($data[19], ['delimiter' => ' ']);
-			    
-			    $result['url'] = $data[8];
-			    $result['filetype'] = self::getFileType($data[8]);
-			    $result['width'] = $data[6];
-			    $result['height'] = $data[7];
-			    $result['source'] = $data[12];
-			    $result['domain'] = $data[20];
+        switch ($url) {
+            case strpos($url, ".jpg") || strpos($url, ".jpeg"):
+                return "jpg";
+                break;
 
-				$results[] = $result;
-			}
+            case strpos($url, ".png"):
+                return "png";
+                break;
 
-		}
+            case strpos($url, ".bmp"):
+                return "bmp";
+                break;
 
-		return $results;
-	}
+            case strpos($url, ".gif"):
+                return "gif";
+                break;
 
-	public static function getFileType($url)
-	{
-		$url = strtolower($url);
-
-		switch ($url) {
-			case strpos($url, '.jpg') || strpos($url, '.jpeg'):
-				return 'jpg';
-				break;
-
-			case strpos($url, '.png'):
-				return 'png';
-				break;
-
-			case strpos($url, '.bmp'):
-				return 'bmp';
-				break;
-
-			case strpos($url, '.gif'):
-				return 'gif';
-				break;
-			
-			default:
-				return 'jpg';
-				break;
-		}
-	}
+            default:
+                return "jpg";
+                break;
+        }
+    }
 }
