@@ -57,7 +57,7 @@ class GoogleImageGrabber
         }
     }
 
-    public static function grab($keyword, $options = [])
+    public static function grab($keyword, $proxy = "", $options = [])
     {
         $url =
             "https://www.google.com/search?q=" .
@@ -81,10 +81,14 @@ class GoogleImageGrabber
         ];
 
         $ua = $uas[array_rand($uas)];
+        if (!empty($proxy)) {
+            $proxy = "tcp://$proxy";
+        }
 
         $options = [
             "http" => [
                 "method" => "GET",
+                "proxy" => "$proxy",
                 "user_agent" => $ua,
             ],
             "ssl" => [
