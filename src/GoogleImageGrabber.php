@@ -132,17 +132,25 @@ class GoogleImageGrabber
                 $result["keyword"] = $keyword;
                 $result["slug"] = __::slug($keyword);
 
-                $result["title"] = ucwords(
-                    __::slug($data[13], ["delimiter" => " "])
-                );
-                $result["alt"] = __::slug($data[19], ["delimiter" => " "]);
+                $result["title"] = isset($data[13])
+                    ? ucwords(__::slug($data[13], ["delimiter" => " "]))
+                    : "";
+                $result["alt"] = isset($data[19])
+                    ? __::slug($data[19], ["delimiter" => " "])
+                    : "";
 
                 $result["url"] = $data[8];
                 $result["filetype"] = self::getFileType($data[8]);
                 $result["width"] = $data[6];
                 $result["height"] = $data[7];
-                $result["source"] = $data[12];
-                $result["domain"] = $data[20];
+                $result["source"] = isset($data[12]) ? $data[12] : "";
+                $result["domain"] = isset($data[20]) ? $data[20] : "";
+
+                $result["thumbnail"] = isset($data[26]) ? $data[26] : $data[1];
+
+                if (strpos($result["url"], "http") !== false) {
+                    $results[] = $result;
+                }
 
                 $results[] = $result;
             }
