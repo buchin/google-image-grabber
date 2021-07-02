@@ -102,7 +102,7 @@ class GoogleImageGrabber
         $response = file_get_contents($url, false, $context);
 
         $exploded = explode(
-            "AF_initDataCallback({key: 'ds:1', isError:  false , hash: '2', data:",
+            "AF_initDataCallback({key: 'ds:1', isError:  false , hash: '4', data:",
             $response
         );
 
