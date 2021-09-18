@@ -101,17 +101,11 @@ class GoogleImageGrabber
 
         $response = file_get_contents($url, false, $context);
 
-        $exploded = explode(
-            "AF_initDataCallback({key: 'ds:1', isError:  false , hash: '4', data:",
-            $response
-        );
+        $re =
+            '/AF_initDataCallback\({key: \'ds:1\', isError:  false , hash: \'\d\', data:(.*), sideChannel: {}}\);<\/script>/m';
+        preg_match_all($re, $response, $matches);
 
-        $data = isset($exploded[1]) ? $exploded[1] : "";
-
-        $data = explode(", sideChannel: {}});</script>", $data);
-        $data = $data[0];
-
-        $data = json_decode($data, true);
+        $data = isset($matches[1][0]) ? json_decode($matches[1][0], true) : [];
 
         $rawResults = [];
         $results = [];
