@@ -102,7 +102,7 @@ class GoogleImageGrabber
         $response = file_get_contents($url, false, $context);
 
         $re =
-            '/AF_initDataCallback\({key: \'ds:1\', isError:  false , hash: \'\d\', data:(.*), sideChannel: {}}\);<\/script>/m';
+            '/AF_initDataCallback\({key: \'ds:1\', hash: \'\d\', data:(.*), sideChannel: {}}\);<\/script>/m';
         preg_match_all($re, $response, $matches);
 
         $data = isset($matches[1][0]) ? json_decode($matches[1][0], true) : [];
