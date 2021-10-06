@@ -4,7 +4,6 @@
     "type": "library",
     "require": {
         "campo/random-user-agent": "^1.2",
-        "paquettg/php-html-parser": "^3.1.0",
         "maciejczyzewski/bottomline": "^0.0.9"
     },
     "license": "MIT",
