@@ -169,10 +169,10 @@ class GoogleImageGrabber
                 $result["keyword"] = $keyword;
                 $result["slug"] = __::slug($keyword);
 
-                $result["title"] = isset($data[13])
+                $result["title"] = isset($data[13]) && is_string($data[13])
                     ? ucwords(__::slug($data[13], ["delimiter" => " "]))
                     : "";
-                $result["alt"] = isset($data[19])
+                $result["alt"] = isset($data[19]) && is_string($data[19])
                     ? __::slug($data[19], ["delimiter" => " "])
                     : "";
 
