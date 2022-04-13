@@ -57,6 +57,51 @@ class GoogleImageGrabber
         }
     }
 
+    public static function file_get_contents($filename, $use_include_path = false, $context = null)
+    {
+        if ( ini_get('allow_url_fopen') ) {
+            return file_get_contents($filename, $use_include_path, $context);
+        } else {
+            return self::curl_get_file_contents($filename, $context);
+        }           
+    }
+
+    public static function curl_get_file_contents($filename, $context = null)
+    {
+        $c = curl_init();
+        curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($c, CURLOPT_URL, $filename);
+
+        if (isset($context['http']['method'])) 
+        {
+            if ($context['http']['method'] == 'GET') {
+                curl_setopt($c, CURLOPT_HTTPGET, true);
+            } else {
+                curl_setopt($c, CURLOPT_CUSTOMREQUEST, $context['http']['method']);
+            }
+        }
+            
+        if (isset($context['http']['proxy'])) 
+        {
+            curl_setopt($c, CURLOPT_HTTPPROXYTUNNEL, true);
+            curl_setopt($c, CURLOPT_PROXY, $context['http']['proxy']);
+        }
+            
+        if (isset($context['http']['user_agent'])) 
+        {
+            curl_setopt($c, CURLOPT_USERAGENT, $context['http']['user_agent']);
+        }
+            
+        curl_setopt($c, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($c, CURLOPT_SSL_VERIFYHOST, 0);
+            
+        $contents = curl_exec($c);
+        curl_close($c);
+    
+        if ($contents) return $contents;
+        else return FALSE;
+    }
+
     public static function grab($keyword, $proxy = "", $options = [])
     {
         $url =
@@ -99,7 +144,7 @@ class GoogleImageGrabber
 
         $context = stream_context_create($options);
 
-        $response = file_get_contents($url, false, $context);
+        $response = self::file_get_contents($url, false, $context);
 
         $re =
             '/AF_initDataCallback\({key: \'ds:1\', hash: \'\d\', data:(.*), sideChannel: {}}\);<\/script>/m';
