@@ -57,6 +57,52 @@ class GoogleImageGrabber
         }
     }
 
+    public static function file_get_contents($filename, $use_include_path = false, $options = null)
+    {
+        if ( ini_get('allow_url_fopen') ) {
+            $context = stream_context_create($options);
+            return file_get_contents($filename, $use_include_path, $context);
+        } else {
+            return self::curl_get_file_contents($filename, $options);
+        }
+    }
+
+    public static function curl_get_file_contents($filename, $options = null)
+    {
+        $c = curl_init();
+        curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($c, CURLOPT_URL, $filename);
+
+        if (isset($options['http']['method']))
+        {
+            if ($options['http']['method'] == 'GET') {
+                curl_setopt($c, CURLOPT_HTTPGET, true);
+            } else {
+                curl_setopt($c, CURLOPT_CUSTOMREQUEST, $options['http']['method']);
+            }
+        }
+
+        if (isset($options['http']['proxy']))
+        {
+            curl_setopt($c, CURLOPT_HTTPPROXYTUNNEL, true);
+            curl_setopt($c, CURLOPT_PROXY, $options['http']['proxy']);
+        }
+
+        if (isset($options['http']['user_agent']))
+        {
+            curl_setopt($c, CURLOPT_USERAGENT, $options['http']['user_agent']);
+        }
+
+        curl_setopt($c, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($c, CURLOPT_SSL_VERIFYHOST, 0);
+
+        $contents = curl_exec($c);
+        curl_close($c);
+
+        if ($contents) return $contents;
+        else return FALSE;
+    }
+
     public static function grab($keyword, $proxy = "", $options = [])
     {
         $url =
@@ -96,10 +142,7 @@ class GoogleImageGrabber
                 "verify_peer_name" => false,
             ],
         ];
-
-        $context = stream_context_create($options);
-
-        $response = file_get_contents($url, false, $context);
+        $response = self::file_get_contents($url, false, $options);
 
         $re =
             '/AF_initDataCallback\({key: \'ds:1\', hash: \'\d\', data:(.*), sideChannel: {}}\);<\/script>/m';
@@ -126,10 +169,10 @@ class GoogleImageGrabber
                 $result["keyword"] = $keyword;
                 $result["slug"] = __::slug($keyword);
 
-                $result["title"] = isset($data[13])
+                $result["title"] = isset($data[13]) && is_string($data[13])
                     ? ucwords(__::slug($data[13], ["delimiter" => " "]))
                     : "";
-                $result["alt"] = isset($data[19])
+                $result["alt"] = isset($data[19]) && is_string($data[19])
                     ? __::slug($data[19], ["delimiter" => " "])
                     : "";
 
