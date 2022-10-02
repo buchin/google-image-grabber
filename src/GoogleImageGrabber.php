@@ -100,28 +100,40 @@ class GoogleImageGrabber
         $context = stream_context_create($options);
 
         $response = file_get_contents($url, false, $context);
-
+        
         $re =
             '/AF_initDataCallback\({key: \'ds:1\', hash: \'\d\', data:(.*), sideChannel: {}}\);<\/script>/m';
         preg_match_all($re, $response, $matches);
 
         $data = isset($matches[1][0]) ? json_decode($matches[1][0], true) : [];
-
+        
         $rawResults = [];
         $results = [];
-
-        if (isset($data[31][0][12][2])) {
-            $rawResults = $data[31][0][12][2];
+        
+        // Old (sometime works and some times not)
+        if (!empty($data[31])) {
+            
+            if (isset($data[31][0][12][2])) {
+                $rawResults = $data[31][0][12][2];
+            }
+        
+        // New     
+        } else {
+            
+            if (isset($data[56][1][0][0][1][0])) {
+                $rawResults = $data[56][1][0][0][1][0];
+            }
         }
-
-        foreach ($rawResults as $rawResult) {
+        
+        foreach ($rawResults as $key => $rawResult) {
+            
             $result = [];
-
+            
             self::filterResult($rawResult, $result);
             $data = self::getValues($result);
 
             $result = [];
-
+            
             if (count($data) >= 11) {
                 $result["keyword"] = $keyword;
                 $result["slug"] = __::slug($keyword);
@@ -145,11 +157,11 @@ class GoogleImageGrabber
                 if (strpos($result["url"], "http") !== false) {
                     $results[] = $result;
                 }
-
-                $results[] = $result;
+                
             }
+            
         }
-
+        
         return $results;
     }
 
