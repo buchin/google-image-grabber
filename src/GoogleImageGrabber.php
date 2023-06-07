@@ -57,12 +57,16 @@ class GoogleImageGrabber
         }
     }
 
-    public static function grab($keyword, $proxy = "", $options = [])
+    public static function grab($keyword, $proxy = "", $options = [], $queryParams = [])
     {
-        $url =
-            "https://www.google.com/search?q=" .
-            urlencode($keyword) .
-            "&source=lnms&tbm=isch&tbs=";
+        $defaultQueryParams = [
+            'q' => $keyword,
+            'source' => 'lnms',
+            'tbm' => 'isch',
+            'tbs' => ''
+        ];
+        $requestParams = array_merge($defaultQueryParams, $queryParams);
+        $url = "https://www.google.com/search?" . http_build_query($requestParams);
 
         $uas = [
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Edg/88.0.705.68",

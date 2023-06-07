@@ -12,4 +12,14 @@ describe('GoogleImageGrabber', function ()
 			expect(count($images))->toBeGreaterThan(0);
 		});
 	});
+
+	describe('::grab($keyword, $proxy = "", $options = [], $queryParams = [])', function ()
+	{
+		it('Searching in a specific language (spanish)', function()
+		{
+                        $queryParams = ['hl' => 'es'];
+			$images = GoogleImageGrabber::grab('php en español', '', [], $queryParams);
+			expect(count($images))->toBeGreaterThan(0);
+		});
+	});
 });
