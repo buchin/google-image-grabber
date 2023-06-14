@@ -1,7 +1,10 @@
-<?php namespace Buchin\GoogleImageGrabber;
+<?php
+
+namespace Buchin\GoogleImageGrabber;
 
 use PHPHtmlParser\Dom;
 use __;
+
 /**
  *
  */
@@ -57,16 +60,65 @@ class GoogleImageGrabber
         }
     }
 
-    public static function grab($keyword, $proxy = "", $options = [], $queryParams = [])
+
+    public static function getSearchURLParams($queryParams = [])
     {
-        $defaultQueryParams = [
-            'q' => $keyword,
+        $paramsAux = [
+            'q' => '',
             'source' => 'lnms',
             'tbm' => 'isch',
-            'tbs' => ''
+            'tbs' => [],
         ];
-        $requestParams = array_merge($defaultQueryParams, $queryParams);
-        $url = "https://www.google.com/search?" . http_build_query($requestParams);
+        if (!is_array($queryParams)) {
+            $paramsAux['q'] = strval($queryParams);
+            $queryParams = [];
+        }
+        $sizes = [
+            'l' => ['large', 'big', 'l'], // isz:l
+            'm' => ['medium', 'm'], // isz:m
+            'i' => ['icon', 'i', 's', 'small']   // isz:i
+        ];
+        $licenses = [
+           'ol' => ['commercial_license', 'commercial', 'ol'], // il:ol
+           'cl' => ['creative_commons', 'cc', 'cl'] //'il:cl',
+        ];
+        foreach ($queryParams as $k => $v) {
+            if (in_array($k, ['keyword', 'search'])) {
+                $paramsAux['q'] = $v;
+                continue;
+            }
+            if (in_array($k, ['lang', 'language', 'locate', 'loc'])) {
+                $paramsAux['hl'] = $v;
+                continue;
+            }
+            if ($k === 'size') {
+                foreach ($sizes as $s_key => $s_viables_keys) {
+                    if (in_array($v, $s_viables_keys)) {
+                        $paramsAux['tbs'][] = 'isz:' . $s_key;
+                        break;
+                    }
+                }
+                continue;
+            }
+            if ($k === 'license') {
+                foreach($licenses as $l_key => $l_viables_keys) {
+                    if (in_array($v, $l_viables_keys)) {
+                        $paramsAux['tbs'][] = 'il:' . $l_key;
+                        break;
+                    }
+                }
+                continue;
+            }
+            $paramsAux[$k] = $v;
+        }
+        $paramsAux['tbs'] = implode(',', $paramsAux['tbs']);
+        return $paramsAux;
+    }
+
+    public static function grab($keyword, $proxy = "", $options = [])
+    {
+        $urlParams = static::getSearchURLParams($keyword);
+        $url = "https://www.google.com/search?" . http_build_query($urlParams);
 
         $uas = [
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Edg/88.0.705.68",
@@ -104,49 +156,48 @@ class GoogleImageGrabber
         $context = stream_context_create($options);
 
         $response = file_get_contents($url, false, $context);
-        
+
         $re =
             '/AF_initDataCallback\({key: \'ds:1\', hash: \'\d\', data:(.*), sideChannel: {}}\);<\/script>/m';
         preg_match_all($re, $response, $matches);
 
         $data = isset($matches[1][0]) ? json_decode($matches[1][0], true) : [];
-        
+
         $rawResults = [];
         $results = [];
-        
+
         // Old (sometime works and some times not)
         if (!empty($data[31])) {
-            
+
             if (isset($data[31][0][12][2])) {
                 $rawResults = $data[31][0][12][2];
             }
-        
-        // New     
+
+        // New
         } else {
-            
+
             if (isset($data[56][1][0][0][1][0])) {
                 $rawResults = $data[56][1][0][0][1][0];
             }
         }
-        
+
         foreach ($rawResults as $key => $rawResult) {
-            
+
             $result = [];
-            
+
             self::filterResult($rawResult, $result);
             $data = self::getValues($result);
 
             $result = [];
-            
-            if (count($data) >= 11) {
-                $result["keyword"] = $keyword;
-                $result["slug"] = __::slug($keyword);
 
+            if (count($data) >= 11) {
+                $result["keyword"] = $urlParams['q'];
+                $result["slug"] = __::slug($urlParams['q']);
                 $result["title"] = isset($data[13])
-                    ? ucwords(__::slug($data[13], ["delimiter" => " "]))
+                    ? ucwords(__::slug(strval($data[13]), ["delimiter" => " "]))
                     : "";
                 $result["alt"] = isset($data[19])
-                    ? __::slug($data[19], ["delimiter" => " "])
+                    ? __::slug(strval($data[19]), ["delimiter" => " "])
                     : "";
 
                 $result["url"] = $data[8];
@@ -161,38 +212,26 @@ class GoogleImageGrabber
                 if (strpos($result["url"], "http") !== false) {
                     $results[] = $result;
                 }
-                
+
             }
-            
+
         }
-        
+
         return $results;
     }
 
     public static function getFileType($url)
     {
         $url = strtolower($url);
-
-        switch ($url) {
-            case strpos($url, ".jpg") || strpos($url, ".jpeg"):
-                return "jpg";
-                break;
-
-            case strpos($url, ".png"):
-                return "png";
-                break;
-
-            case strpos($url, ".bmp"):
-                return "bmp";
-                break;
-
-            case strpos($url, ".gif"):
-                return "gif";
-                break;
-
-            default:
-                return "jpg";
-                break;
+        $types = [
+            'bmp', 'eps', 'gif', 'heif', 'indd',
+            'png', 'svg', 'tiff', 'psd', 'raw', 'webp'
+        ];
+        foreach ($types as $t) {
+            if (strpos($url, '.' . $t) > 1){
+                return $t;
+            }
         }
+        return "jpg";
     }
 }

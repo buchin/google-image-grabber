@@ -3,8 +3,8 @@
     "description": "Scrape google images",
     "type": "library",
     "require": {
-        "campo/random-user-agent": "^1.2",
-        "maciejczyzewski/bottomline": "^0.0.9"
+        "campo/random-user-agent": "^1.3",
+        "maciejczyzewski/bottomline": "^0.2.3"
     },
     "license": "MIT",
     "authors": [
